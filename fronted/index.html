@@ -1,0 +1,107 @@
+Landy Recinos 
+1890-24-9060
+
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Hospital Urgencias</title>
+</head>
+<body>
+
+<h1>🚑 Hospital Urgencias</h1>
+
+<button onclick="verCasos()">Ver Casos</button> <button onclick="mostrarFormulario()">Registrar Paciente</button>
+
+<hr>
+
+<div id="contenido"></div>
+<div id="mensaje"></div>
+
+<script>
+
+const API = "https://examen9060-cac5dtephbbbhjfj.mexicocentral-01.azurewebsites.net";
+
+async function verCasos() {
+    try {
+        const res = await fetch(API + "/api/Pacientes");
+
+        if (!res.ok) throw res;
+
+        const data = await res.json();
+
+        let html = "<h2>Pacientes en Triaje</h2>";
+
+        data.forEach(p => {
+
+            let color = "green";
+
+            if (p.nivelGravedad == 5) color = "red";
+            else if (p.nivelGravedad >= 3) color = "orange";
+
+            html += `
+    <div style="
+        background:white;
+        padding:15px;
+        margin:10px 0;
+        border-left:8px solid ${color};
+        box-shadow:0 0 5px rgba(0,0,0,0.2);
+    ">
+        <b>${p.nombre}</b><br>
+        Síntomas: ${p.sintomas || "No especificado"}<br>
+        Médico: ${p.medicoResponsable}<br>
+        Estado: ${p.estado}<br>
+        Gravedad: ${p.nivelGravedad}
+    </div>
+`;
+
+
+        });
+
+        document.getElementById("contenido").innerHTML = html;
+
+    } catch (error) {
+        manejarError(error);
+    }
+}
+function mostrarFormulario() {
+    document.getElementById("contenido").innerHTML = `
+        <input id="nombre" placeholder="Nombre"><br>
+        <input id="edad" type="number" placeholder="Edad"><br>
+        <input id="nivel" placeholder="Nivel gravedad"><br>
+        <button onclick="registrar()">Guardar</button>
+    `;
+}
+
+async function registrar() {
+    try {
+        const paciente = {
+            nombre: document.getElementById("nombre").value,
+            edad: parseInt(document.getElementById("edad").value),
+            nivelGravedad: parseInt(document.getElementById("nivel").value)
+        };
+
+        const res = await fetch(API + "/api/Pacientes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(paciente)
+        });
+
+        if (res.status === 401) {
+            document.getElementById("mensaje").innerText = "Médico no autorizado";
+        } else if (res.status === 400) {
+            document.getElementById("mensaje").innerText = "Capacidad llena";
+        } else {
+            document.getElementById("mensaje").innerText = "Paciente registrado";
+        }
+
+    } catch (error) {
+        document.getElementById("mensaje").innerText = "Error general";
+    }
+}
+
+</script>
+
+</body>
+</html>
